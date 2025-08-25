@@ -1,2 +1,5 @@
 (library
- (name roberto))
+ (name roberto_lib)
+ (libraries sedlex)
+ (preprocess (pps sedlex.ppx))
+ )

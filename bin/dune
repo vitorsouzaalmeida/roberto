@@ -1,4 +1,4 @@
 (executable
- (public_name roberto)
- (name main)
- (libraries roberto))
+   (public_name roberto)
+   (name main)
+   (libraries roberto_lib))

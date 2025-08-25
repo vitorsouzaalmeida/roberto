@@ -1,2 +1,4 @@
 (test
- (name test_roberto))
+ (name test_roberto)
+  (libraries roberto_lib ounit2)
+ )
