@@ -1,4 +1,4 @@
-let usage_msg = "olox [script] || olex (for REPL)"
+let usage_msg = "Roberto's CLI"
 let script = ref false
 let repl = ref false
 let input_files = ref []
@@ -12,9 +12,13 @@ let speclist =
 
 let () = Arg.parse speclist anon_fun usage_msg
 
-let _report (line : int) (where : string) (message : string) =
+(* I've splitted report and error to separate the code that generates
+the errors from the code that reports them. *)
+let report (line : int) (where : string) (message : string) =
   Printf.eprintf "[line %d] Error: %s : %s" line where message;
   true
+
+let _error (line : int) message = report line "" message
 
 let run_file (filename : string) =
   let file_content = In_channel.with_open_text filename In_channel.input_all in
