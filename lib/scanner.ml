@@ -3,64 +3,85 @@ open Sedlexing
 
 let lexeme buf = Utf8.lexeme buf
 
+type scanner_state = { mutable line : int }
+
+let state = { line = 1 }
+
+let create_token_record token_type lexeme_str literal =
+  { token_type; lexeme = lexeme_str; literal; line = state.line }
+
 let rec token buf =
   match%sedlex buf with
-  | Plus (Chars " \r\t\n") -> token buf
+  | Plus (Chars " \r\t") -> token buf
+  | '\n' ->
+      state.line <- state.line + 1;
+      token buf
   (* Single character tokens *)
-  | '(' -> LEFT_PAREN
-  | ')' -> RIGHT_PAREN
-  | '{' -> LEFT_BRACE
-  | '}' -> RIGHT_BRACE
-  | ',' -> COMMA
-  | '.' -> DOT
-  | '-' -> MINUS
-  | '+' -> PLUS
-  | ';' -> SEMICOLON
-  | '*' -> STAR
+  | '(' -> create_token_record LEFT_PAREN (lexeme buf) None
+  | ')' -> create_token_record RIGHT_PAREN (lexeme buf) None
+  | '{' -> create_token_record LEFT_BRACE (lexeme buf) None
+  | '}' -> create_token_record RIGHT_BRACE (lexeme buf) None
+  | ',' -> create_token_record COMMA (lexeme buf) None
+  | '.' -> create_token_record DOT (lexeme buf) None
+  | '-' -> create_token_record MINUS (lexeme buf) None
+  | '+' -> create_token_record PLUS (lexeme buf) None
+  | ';' -> create_token_record SEMICOLON (lexeme buf) None
+  | '*' -> create_token_record STAR (lexeme buf) None
   (* Two character token *)
-  | "!=" -> BANG_EQUAL
-  | "==" -> EQUAL_EQUAL
-  | "<=" -> LESS_EQUAL
-  | ">=" -> GREATER_EQUAL
+  | "!=" -> create_token_record BANG_EQUAL (lexeme buf) None
+  | "==" -> create_token_record EQUAL_EQUAL (lexeme buf) None
+  | "<=" -> create_token_record LESS_EQUAL (lexeme buf) None
+  | ">=" -> create_token_record GREATER_EQUAL (lexeme buf) None
   (* Single or two character tokens *)
-  | '!' -> BANG
-  | '=' -> EQUAL
-  | '<' -> LESS
-  | '>' -> GREATER
-  | '/' -> SLASH
+  | '!' -> create_token_record BANG (lexeme buf) None
+  | '=' -> create_token_record EQUAL (lexeme buf) None
+  | '<' -> create_token_record LESS (lexeme buf) None
+  | '>' -> create_token_record GREATER (lexeme buf) None
+  | '/' -> create_token_record SLASH (lexeme buf) None
   (* Literals *)
-  | Plus '0' .. '9' -> NUMBER (* TODO: parse the number *)
-  | '"', Star (Compl '"'), '"' -> STRING (* String literal *)
-  | Plus ('a' .. 'z' | 'A' .. 'Z' | '_') -> (
+  | Plus '0' .. '9', Opt ('.', Plus '0' .. '9') ->
       let lex = lexeme buf in
-      match lex with
-      | "and" -> AND
-      | "class" -> CLASS
-      | "else" -> ELSE
-      | "false" -> FALSE
-      | "for" -> FOR
-      | "fun" -> FUN
-      | "if" -> IF
-      | "nil" -> NIL
-      | "or" -> OR
-      | "print" -> PRINT
-      | "return" -> RETURN
-      | "super" -> SUPER
-      | "this" -> THIS
-      | "true" -> TRUE
-      | "var" -> VAR
-      | "while" -> WHILE
-      | _ -> IDENTIFIER)
-  | eof -> EOF
+      let num = float_of_string lex in
+      create_token_record NUMBER lex (Some (NumberLiteral num))
+  | '"', Star (Compl '"'), '"' ->
+      let lex = lexeme buf in
+      let str_content = String.sub lex 1 (String.length lex - 2) in
+      create_token_record STRING lex (Some (StringLiteral str_content))
+  | Plus ('a' .. 'z' | 'A' .. 'Z' | '_') ->
+      let lex = lexeme buf in
+      let token_type, literal =
+        match lex with
+        | "and" -> (AND, None)
+        | "class" -> (CLASS, None)
+        | "else" -> (ELSE, None)
+        | "false" -> (FALSE, Some (BoolLiteral false))
+        | "for" -> (FOR, None)
+        | "fun" -> (FUN, None)
+        | "if" -> (IF, None)
+        | "nil" -> (NIL, Some NilLiteral)
+        | "or" -> (OR, None)
+        | "print" -> (PRINT, None)
+        | "return" -> (RETURN, None)
+        | "super" -> (SUPER, None)
+        | "this" -> (THIS, None)
+        | "true" -> (TRUE, Some (BoolLiteral true))
+        | "var" -> (VAR, None)
+        | "while" -> (WHILE, None)
+        | _ -> (IDENTIFIER, None)
+      in
+      create_token_record token_type lex literal
+  | eof -> create_token_record EOF "" None
   | _ -> failwith ("Unexpected character: " ^ lexeme buf)
 
 let from_string str = Sedlexing.Utf8.from_string str
 
 let scan_tokens str =
+  state.line <- 1;
   let buf = from_string str in
   let rec loop acc =
-    match token buf with
-    | EOF -> List.rev (EOF :: acc)
-    | tok -> loop (tok :: acc)
+    let tok = token buf in
+    match tok.token_type with
+    | EOF -> List.rev (tok :: acc)
+    | _ -> loop (tok :: acc)
   in
   loop []
