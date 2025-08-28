@@ -1,16 +1,36 @@
-open Token
+(* open Token *)
 open Sedlexing
+open Parser
 
+let digit = [%sedlex.regexp? '0' .. '9']
+let number = [%sedlex.regexp? Plus digit, Opt ('.', Plus digit)]
 let lexeme buf = Utf8.lexeme buf
 
 type scanner_state = { mutable line : int }
 
 let state = { line = 1 }
 
-let create_token_record token_type lexeme_str literal =
-  { token_type; lexeme = lexeme_str; literal; line = state.line }
+exception Eof
+
+(* let create_token_record token_type lexeme_str literal =
+  { token_type; lexeme = lexeme_str; literal; line = state.line } *)
 
 let rec token buf =
+  match%sedlex buf with
+  | Plus (Chars " \r\t\n") -> token buf
+  | '+' -> PLUS
+  | '(' -> LEFT_PAREN
+  | ')' -> RIGHT_PAREN
+  (* | Plus ('a' .. 'z' | 'A' .. 'Z' | '_') -> (
+      let lex = lexeme buf in
+      match lex with
+      | "print" -> PRINT
+      | _ -> failwith ("Unknown identifier: " ^ lex)) *)
+  | eof -> EOF
+  | number -> NUMBER (float_of_string (Sedlexing.Utf8.lexeme buf))
+  | _ -> failwith "Unexpected character"
+
+(* let rec token buf =
   match%sedlex buf with
   | Plus (Chars " \r\t") -> token buf
   | '\n' ->
@@ -71,9 +91,9 @@ let rec token buf =
       in
       create_token_record token_type lex literal
   | eof -> create_token_record EOF "" None
-  | _ -> failwith ("Unexpected character: " ^ lexeme buf)
+  | _ -> failwith ("Unexpected character: " ^ lexeme buf) *)
 
-let from_string str = Sedlexing.Utf8.from_string str
+(* let from_string str = Sedlexing.Utf8.from_string str
 
 let scan_tokens str =
   state.line <- 1;
@@ -84,4 +104,4 @@ let scan_tokens str =
     | EOF -> List.rev (tok :: acc)
     | _ -> loop (tok :: acc)
   in
-  loop []
+  loop [] *)

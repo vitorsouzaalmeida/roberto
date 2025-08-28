@@ -1,5 +1,9 @@
+(menhir 
+ (modules parser)
+)
+
 (library
  (name roberto_lib)
- (libraries sedlex)
+ (libraries sedlex menhirLib)
  (preprocess (pps sedlex.ppx))
  )

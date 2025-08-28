@@ -36,3 +36,6 @@ setup.log
 _opam/
 
 roberto
+
+lib/parser.ml
+lib/parser.mli

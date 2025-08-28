@@ -24,14 +24,24 @@ let run_file (filename : string) =
   let file_content = In_channel.with_open_text filename In_channel.input_all in
   print_endline file_content
 
-let run (input : string) = print_string input
-
 let repl () =
   while true do
     print_string "> ";
     flush stdout;
     let line = read_line () in
-    match line with "" -> exit 0 | _ -> run line
+    let lexbuf = Sedlexing.Utf8.from_string line in
+    let lexer = Sedlexing.with_tokenizer Roberto_lib.Scanner.token lexbuf in
+    let parser =
+      MenhirLib.Convert.Simplified.traditional2revised Roberto_lib.Parser.main
+    in
+    try
+      let result = parser lexer in
+      print_float result;
+      print_newline ();
+      flush stdout
+    with
+    | Failure msg -> Printf.printf "Error: %s\n" msg
+    | _ -> Printf.eprintf "Parse error\n"
   done
 
 let () =
