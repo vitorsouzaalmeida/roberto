@@ -28,7 +28,8 @@ let run_file (filename : string) =
     MenhirLib.Convert.Simplified.traditional2revised Roberto_lib.Parser.main
   in
   try
-    let result = parser lexer in
+    let ast = parser lexer in
+    let result = Roberto_lib.Eval.eval [] ast in
     print_float result;
     print_newline ()
   with
@@ -46,7 +47,8 @@ let repl () =
       MenhirLib.Convert.Simplified.traditional2revised Roberto_lib.Parser.main
     in
     try
-      let result = parser lexer in
+      let ast = parser lexer in
+      let result = Roberto_lib.Eval.eval [] ast in
       print_float result;
       print_newline ();
       flush stdout

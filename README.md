@@ -5,3 +5,11 @@ ROBERTO ALSO HAS A CLI
 
 ROBERTO IS HELPING ME TO UNDERSTAND COMPILERS, INTERPRETERS AND OCAML 
 ROBERTO IS MY IMAGINARY FRIEND THAT HELPS ME LEARN AND EXPLORE NEW IDEAS. 
+
+
+# About the lannguage 
+By now everything will be an expression.
+
+
+# Learning notes
+## Precedence and associativity
