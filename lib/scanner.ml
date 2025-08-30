@@ -4,6 +4,9 @@ open Parser
 
 let digit = [%sedlex.regexp? '0' .. '9']
 let number = [%sedlex.regexp? Plus digit, Opt ('.', Plus digit)]
+let letter = [%sedlex.regexp? 'a' .. 'z' | 'A' .. 'Z']
+let identifier_char = [%sedlex.regexp? letter | digit | '_']
+let identifier = [%sedlex.regexp? (letter | '_'), Star identifier_char]
 let lexeme buf = Utf8.lexeme buf
 
 type scanner_state = { mutable line : int }
@@ -19,8 +22,22 @@ let rec token buf =
   match%sedlex buf with
   | Plus (Chars " \r\t\n") -> token buf
   | '+' -> PLUS
+  | '-' -> MINUS
+  | '*' -> STAR
   | '(' -> LEFT_PAREN
   | ')' -> RIGHT_PAREN
+  | '=' -> EQUAL
+  (* Single or two character tokens *)
+  | '/' -> SLASH
+  | identifier -> (
+      let lex = Sedlexing.Utf8.lexeme buf in
+      match lex with
+      | "let" -> LET
+      | "var" -> VAR
+      | "in" -> IN
+      | "end" -> END
+      | _ -> ID lex)
+  | ":=" -> ASSIGN
   (* | Plus ('a' .. 'z' | 'A' .. 'Z' | '_') -> (
       let lex = lexeme buf in
       match lex with
